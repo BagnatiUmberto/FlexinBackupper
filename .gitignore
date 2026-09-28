@@ -2,9 +2,8 @@
 .vscode/
 __pycache__/
 
-compilation_spec_files/
+
 compiled/
-cnstaller/
 misc/
 
 *.sqlite
