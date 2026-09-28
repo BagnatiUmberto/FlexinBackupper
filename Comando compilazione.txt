@@ -1,0 +1,1 @@
+pyinstaller  'c:/Users/bagnati.umberto/Documents/Projects/Scambio Dati DB Flexin/new code/compile_spec/main.spec' --distpath 'C:/Users/bagnati.umberto/Documents/Projects/Scambio Dati DB Flexin/new code/compiled/Dist' --workpath 'C:/Users/bagnati.umberto/Documents/Projects/Scambio Dati DB Flexin/new code/compiled/Build'
