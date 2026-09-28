@@ -212,7 +212,8 @@ Umberto Bagnati - u.bagnati@electronicsystems.it
 [license-url]: https://github.com/othneildrew/Best-README-Template/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/othneildrew
-[product-screenshot]: ./assets/imgs/readme_imgs/Cover.png
-[settings-screenshot]: ./assets/imgs/readme_imgs/settings.png
+[product-screenshot]: ./assets/imgs/readme_imgs/Anteprima.png
+[config-client]: ./assets/imgs/readme_imgs/config_client.png
+[config-server]: ./assets/imgs/readme_imgs/config_server.png
 [python]: https://www.python.org/static/community_logos/python-logo-generic.svg
 [python-url]: https://www.python.org/
