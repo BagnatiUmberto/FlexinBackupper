@@ -118,10 +118,7 @@ python -m venv .venv
    ```sh
    pip install -r requirements.txt
    ```
-6. Via shell move to the "code/server" folder and run
-   ```sh
-   py main.py
-   ```
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -129,26 +126,10 @@ python -m venv .venv
 
 ## Usage
 
-### Database backup
+Once the program has started type client or server based on the host.
+The server, usually a central PC on the net, is the destination PC that has to receive the images and the database.
+The client, usually the Flexin, is the source of the information that has to copied on the 
 
-<p>Once the program has started you will see a window like this</p>
-<img src="assets/imgs/readme_imgs/start.png" alt="Logo" height="180">
-<p>Click on "add flexin", the settings window will open</p>
-<img src="assets/imgs/readme_imgs/settings.png" alt="Logo" height="180">
-<p>Input the database connection parameters and press save</p>
-<p>If everything went fine a local database for storing the reels and defect data will be created and the bakcup process will start</p>
-
-### Images backup
-
-<p>
-This application will automatically start a server that listens for client's connections.
-The server will manage the backup of the images. It receive zip files from clients containing the images, unzip them and move the images to the desired location. The destination folder for the images can be set in the config file at "%appdata%/Local/FlexinBackupper/CONFIG/general_config.ini"
-</p>
-<p>
-In this architecture the flexin Ipc play the client role. The client program has to be installed on it and run.
-</p>
-
-<p>The client configuration file</p>
 
 ```
 [SERVER]
