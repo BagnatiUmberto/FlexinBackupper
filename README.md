@@ -1,23 +1,5 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
-
 <a id="readme-top"></a>
 
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -66,11 +48,8 @@
 </details>
 
 <!-- ABOUT THE PROJECT -->
-
-## About The Project
-
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
-
+## About The Project
 The latest version of Flexin software adopted a new database engine and decorporated the images from a db table.
 This pushed us toward the need of a new backup software.
 This software is useful for two needs.
@@ -84,7 +63,7 @@ This software is useful for two needs.
 
 [![Next][python]][python-url]
 
-<p>version: 3.14.0</p>
+<p>version: 3.8.10</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -126,22 +105,69 @@ python -m venv .venv
 
 ## Usage
 
-Once the program has started type client or server based on the host.
-The server, usually a central PC on the net, is the destination PC that has to receive the images and the database.
-The client, usually the Flexin, is the source of the information that has to copied on the 
+The **server**, usually a central PC on the net, is the destination PC that has to receive the images and the database.
+The **client**, usually the Flexin, is the source of the information that has to copied on the 
 
+Start the program and type **client or server** based on the host.
+At the first run the program will terminate by itself and a config file will be created
 
+Config file is found at *"C:\Users\\[user]\AppData\Local\FlexinBackupper\server\CONFIG"* for the server
+Config file is found at *"C:\Users\\[user]\AppData\Local\FlexinBackupper\client\CONFIG"* for the client
+
+Server config:
 ```
-[SERVER]
-#IP = 192.168.10.173
-IP = 127.0.0.1
-PORT = 6392
+[GENERAL]
+host = leave blank
+port = [default 5007] change if occupied
+extractzips = [default True] set false to avoid the zip extraction
+KeepDays = [default 365]
 
-[CLIENT]
-IMGS_DIR = ../../Img_copy
+[IMGS]
+extractionfolder = [default C:\Users\\[user]\AppData\Local\FlexinBackupper\server\ZIPS\extracted]
 
-[FLEXIN]
-NAME = Flexin1
+[FOLDERS]
+config = [default C:\Users\\[user]\AppData\Local\FlexinBackupper\server\CONFIG]
+zips = [default C:\Users\\[user]\AppData\Local\FlexinBackupper\server\ZIPS]
+logs = [default C:\Users\\[user]\AppData\Local\FlexinBackupper\server\LOGS]
+```
+
+
+Client config:
+```
+[GENERAL]
+flexinname = FlexinName
+keepdays = 1000
+fileextension = jpg
+maxzipesizebyte = 20000
+pausetime = 10
+
+[SERVER_CONN]
+serverip = 127.0.0.1
+port = 50007
+
+[DB_REGISTRY]
+host = localhost
+user = root
+password = root
+port = 3307
+database = img_registry
+
+[LOCAL_DB_REELS]
+host = localhost
+user = root
+password = root
+port = 3307
+database = db_flexin
+
+[REMOTE_DB_REELS]
+host = localhost
+user = root
+password = root
+port = 3307
+database = db_flexin_receive
+
+[FOLDERS]
+imgs = C:\Users\bagnati.umberto\Documents\Projects\Scambio Dati DB Flexin\misc\Img_copy
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

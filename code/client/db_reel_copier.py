@@ -103,7 +103,7 @@ class DbReelCopier(Manager):
                 if reels_to_copy is not None and len(reels_to_copy) != 0:
                     col_num = self.get_columns_number(self.local_flexin_db_connection, "tablebob")
                     placeholders = ", ".join(["%s"] * col_num)
-                    self.executemany(f"INSERT INTO tablebob VALUES ({placeholders})", reels_to_copy, connection=self.remote_flexin_db_connection)
+                    self.executemany(f"INSERT IGNORE INTO tablebob VALUES ({placeholders})", reels_to_copy, connection=self.remote_flexin_db_connection)
 
                 # Get defects and load
                 last_copied_defect_id = self._get_max_id(self.remote_flexin_db_connection, "tabledif")
@@ -117,7 +117,7 @@ class DbReelCopier(Manager):
                     col_num = self.get_columns_number(self.local_flexin_db_connection, "tabledif")
 
                     placeholders = ", ".join(["%s"] * col_num)
-                    self.executemany(f"INSERT INTO tabledif VALUES ({placeholders})", defects_to_copy, connection=self.remote_flexin_db_connection)
+                    self.executemany(f"INSERT IGNORE INTO tabledif VALUES ({placeholders})", defects_to_copy, connection=self.remote_flexin_db_connection)
 
                 
                 if len(defects_to_copy) == 0 and len(reels_to_copy) == 0:
@@ -282,7 +282,7 @@ class DbReelCopier(Manager):
         placeholders = ", ".join(["%s"] * col_num)
 
         for record in result:
-            query = f"INSERT INTO tablericette VALUES ({placeholders}) "
+            query = f"INSERT IGNORE INTO tablericette VALUES ({placeholders}) "
             self.query(query, params= record,  connection=self.remote_flexin_db_connection)
         self.logger.info(f"Inserted {str(len(result))} recipes")
 
@@ -308,7 +308,7 @@ class DbReelCopier(Manager):
                 return
             col_num = self.get_columns_number(self.local_flexin_db_connection, "tablespeed")
             placeholders = ", ".join(["%s"] * col_num)
-            self.executemany(f"INSERT INTO tablespeed VALUES ({placeholders})", results, connection=self.remote_flexin_db_connection)
+            self.executemany(f"INSERT IGNORE INTO tablespeed VALUES ({placeholders})", results, connection=self.remote_flexin_db_connection)
             self.logger.info(f"Inserted records in tablespeed from {str(id_last_loaded_remote)} to {str(id_last_loaded_local)}")
 
 
@@ -330,7 +330,7 @@ class DbReelCopier(Manager):
                 return
             col_num = self.get_columns_number(self.local_flexin_db_connection, "tablewidth")
             placeholders = ", ".join(["%s"] * col_num)
-            self.executemany(f"INSERT INTO tablewidth VALUES ({placeholders})", results, connection=self.remote_flexin_db_connection)
+            self.executemany(f"INSERT IGNORE INTO tablewidth VALUES ({placeholders})", results, connection=self.remote_flexin_db_connection)
             self.logger.info(f"Inserted records in tablewidth from {str(id_last_loaded_remote)} to {str(id_last_loaded_local)}")
 
 
