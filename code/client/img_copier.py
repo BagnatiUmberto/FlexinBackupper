@@ -11,22 +11,10 @@ import zipfile
  
 from client.manager import Manager
 from utils_funct import filesystem_utils as fsutil
-from client.paths import LOG_DIR, DATA_DIR, FLEXIN_DIR, CONFIG_DIR, ZIP_DIR
+from client.paths import LOG_DIR, DATA_DIR, ZIP_DIR
 
 # Per rendere il software più robusto si potrebbe azzerare il journal ogni tot esecuzioni 
 # così da fare ripartire il sistema e includere eventuali immagini mancanti
-
-# Class definition for returned dictionaries
-class JournalInfo(TypedDict):
-    img_name    : str
-    folder      : str
-    year        : str
-    month       : str
-    day         : str
-    hour        : str
-    minute      : str
-    img_idx     : int
-    last_zip    : str
 
 
 ####################
@@ -109,63 +97,61 @@ class ImgCopierManager(Manager):
                 
                 folder_path = os.path.join(self.imgs_folder_path, actual_folder_info['rel_path'])
                 
-
-                for img in os.listdir(folder_path):
-                    
-                    if self.img_exists(img):
-                        print(f"\rImage {img} skipped", end="", flush=True)
-                        continue                  
-                    img_abs_path = os.path.join(folder_path, img)
-                    img_rel_path = os.path.join(actual_folder_info['rel_path'], img)
-
-                    try:
-                        with zipfile.ZipFile(temp_zip_path, 'a') as zipf:                                
-                            zipf.write(img_abs_path, arcname=img_rel_path)
-                        temp_img_list.append((img,))
-                        print(f"\rImage {img} added to the zip", end="", flush=True)
-                        self.logger.info(f"Image {img} added to the zip")
-                            
-                    except:
-                        self.logger.error(f"Error during the zip of the file: {img}")
-                        continue
-
-                    time.sleep(0.001)               
-
-
-                    if os.path.exists(temp_zip_path):
-                        zip_size = os.path.getsize(temp_zip_path)
+                if actual_folder_info['folder_name'] < last_folder_info['folder_name']:
+                    for img in os.listdir(folder_path):
                         
-                        # Max zip size reached: rotate the zip
-                        if zip_size > self.max_zip_size_byte:                    
-                            try:
-                                os.replace(temp_zip_path, final_zip_path)
-                            except:
-                                os.remove(temp_zip_path)
+                        if self.is_img_in_registry(img):
+                            print(f"\rImage {img} skipped", end="", flush=True)
+                            continue                  
+                        img_abs_path = os.path.join(folder_path, img)
+                        img_rel_path = os.path.join(actual_folder_info['rel_path'], img)
 
-                            if len(temp_img_list) > 0:
-                                self.write_img_db(temp_img_list)
-                            temp_img_list = []
-
-                            zip_file_name = self.get_new_zip_name()
-                            final_zip_path = os.path.join(self.completed_zip_path, zip_file_name)
-                            temp_zip_path = os.path.join(self.in_progress_zip_path, zip_file_name + ".tmp")
-
-
-
-                if actual_folder_info['folder_name'] == last_folder_info['folder_name']:
-                    if os.path.exists(temp_zip_path):
                         try:
-                            os.replace(temp_zip_path, final_zip_path)
+                            with zipfile.ZipFile(temp_zip_path, 'a') as zipf:                                
+                                zipf.write(img_abs_path, arcname=img_rel_path)
+                            temp_img_list.append((img,))
+                            print(f"\rImage {img} added to the zip", end="", flush=True)
+                            self.logger.info(f"Image {img} added to the zip")
+                                
                         except:
-                            os.remove(temp_zip_path)
+                            self.logger.error(f"Error during the zip of the file: {img}")
+                            continue
 
-                        if len(temp_img_list) > 0:
-                            self.write_img_db(temp_img_list)
-                        temp_img_list = []
+                        time.sleep(0.001)               
 
-                        zip_file_name = self.get_new_zip_name()
-                        final_zip_path = os.path.join(self.completed_zip_path, zip_file_name)
-                        temp_zip_path = os.path.join(self.in_progress_zip_path, zip_file_name + ".tmp")
+
+                        if os.path.exists(temp_zip_path):
+                            zip_size = os.path.getsize(temp_zip_path)
+                            
+                            # Max zip size reached: rotate the zip
+                            if zip_size > self.max_zip_size_byte:                    
+                                try:
+                                    os.replace(temp_zip_path, final_zip_path)
+                                except:
+                                    os.remove(temp_zip_path)
+
+                                if len(temp_img_list) > 0:
+                                    self.write_img_db(temp_img_list)
+                                temp_img_list = []
+
+                                zip_file_name = self.get_new_zip_name()
+                                final_zip_path = os.path.join(self.completed_zip_path, zip_file_name)
+                                temp_zip_path = os.path.join(self.in_progress_zip_path, zip_file_name + ".tmp")
+
+            
+            if os.path.exists(temp_zip_path):
+                try:
+                    os.replace(temp_zip_path, final_zip_path)
+                except:
+                    os.remove(temp_zip_path)
+
+                if len(temp_img_list) > 0:
+                    self.write_img_db(temp_img_list)
+                temp_img_list = []
+
+                zip_file_name = self.get_new_zip_name()
+                final_zip_path = os.path.join(self.completed_zip_path, zip_file_name)
+                temp_zip_path = os.path.join(self.in_progress_zip_path, zip_file_name + ".tmp")
 
 
             self.logger.info("End of scan fs")
@@ -198,75 +184,6 @@ class ImgCopierManager(Manager):
     ###############
     # FS OPERATIONS
     ###############
-    def write_journal(self, img_name, idx, zip_file_name):
-        img_info : fsutil.ImageInfo = fsutil.extract_img_info(img_name)
-        with open(self.journal_path + ".tmp", 'w') as file:
-            data : JournalInfo = {
-                'img_name'      : img_name,
-                'folder'        : img_info['parent_folder'],
-                'year'          : img_info['year'],
-                'month'         : img_info['month'],
-                'day'           : img_info['day'],
-                'hour'          : img_info['hour'],
-                'minute'        : img_info['minute'],
-                'img_idx'       : idx,
-                'last_zip'      : zip_file_name
-            }
-            json_str = json.dumps(data, indent=4)
-            file.write(json_str)
-            file.flush()
-            os.fsync(file.fileno())
-        os.replace(self.journal_path + ".tmp", self.journal_path)
-
-
-
-    def create_imgs_list(self, folder_info : fsutil.FolderInfo, last_folder_name, last_img_idx) -> List[str]:
-        '''
-        Returns a list containing the names of the imgs that have to be zipped based on the last_folder_name and last_img_idx
-        Args:
-            last_folder_name(str): the name of the last folder zipped
-            last_img_idx(int): the index of the last image zipped from the last folder, the idx is obtained by sorting the images
-
-        Returns(List[str]):
-            the list of images
-        '''
-        folder_name = folder_info['folder_name']
-        imgs_list = []
-        folder_abs_path = os.path.join(self.imgs_folder_path, folder_info['rel_path'])
-        if not os.path.isdir(folder_abs_path):
-            raise fsutil.RootFolderMissing(f"Folder is missing: {folder_abs_path}")
-
-        imgs_list = sorted(os.listdir(folder_abs_path))
-        # If is the next folder after the one we last added to the
-        # in-progress zip, take all its images
-        if folder_name > last_folder_name:
-            return imgs_list    
-
-        if folder_name == last_folder_name:
-            return imgs_list[last_img_idx:]
-
-        return imgs_list
-        
-
-
-    def write_missing(self, abs_img_path : str, rel_img_path : str):
-        with open(self.errors_journal_path,  'a') as file:
-            file.write(f"{abs_img_path}-{rel_img_path}\n")
-
-
-
-    def zip_missing(self, zip_file):
-        if not os.path.exists(self.errors_journal_path):
-            return
-        with open(self.errors_journal_path,  'r') as file:
-            for line in file:
-                with zipfile.ZipFile(zip_file, 'a') as zipf:
-                    stripped = line.strip()
-                    abs_path = stripped.split("-")[0]              
-                    rel_path = stripped.split("-")[1]
-                    zipf.write(abs_path, arcname=rel_path)
-
-
     def create_sqlite_db(self):
         conn = sqlite3.connect(os.path.join(DATA_DIR, "register.db"))  # Creates a new database file if it doesn’t exist
         cursor_obj = conn.cursor()
@@ -279,7 +196,7 @@ class ImgCopierManager(Manager):
         return conn
 
 
-    def img_exists(self, img_name) -> bool:
+    def is_img_in_registry(self, img_name) -> bool:
         conn = sqlite3.connect(os.path.join(DATA_DIR, "register.db"))
         cursor = conn.cursor()
         cursor.execute("SELECT * from register where path = ?", (img_name, ))

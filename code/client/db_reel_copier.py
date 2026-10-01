@@ -66,9 +66,9 @@ class DbReelCopier(Manager):
                 self._refresh_db_connection()
 
                 # Create the tables
-                sql_files = ["tablebob", "tabledif", "tablericette", "tablespeed", "tablewidth"]
+                sql_tables = ["tablebob", "tabledif", "tablericette", "tablespeed", "tablewidth"]
 
-                for el in sql_files:
+                for el in sql_tables:
                     query_string = self.get_table_create(el)[0][1]                   
                     query_string = query_string.replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS ")
                     query_string =  query_string.replace("AUTO_INCREMENT", "", 1)
@@ -80,13 +80,13 @@ class DbReelCopier(Manager):
                 self.insert_table_speed()
                 self.insert_table_width()
 
-                last_copied = None
+                last_copied_reel = None
 
                 # Delete file older than keepdays in config
                 self._delete_older_records(self.remote_flexin_db_connection)
 
                 # Get the reel currently in production, this must be skipped
-                reel_in_production = self._get_max_reel(self.local_flexin_db_connection)
+                reel_in_production = self.get_max_element("tablebob", self.local_flexin_db_connection)
 
                 #print("max reel: " + str(reel_in_production))
                 if reel_in_production is None:
@@ -95,10 +95,10 @@ class DbReelCopier(Manager):
                     continue   
 
                 # Get the latest reel loaded on the remote connection
-                last_copied = self._get_max_reel(self.remote_flexin_db_connection)                    
+                last_copied_reel = self.get_max_element("tablebob", self.remote_flexin_db_connection)                    
 
                 # Get reels and load
-                reels_to_copy = self._get_reels_to_copy(self.local_flexin_db_connection, last_copied, reel_in_production)
+                reels_to_copy = self._get_reels_to_copy(self.local_flexin_db_connection, last_copied_reel, reel_in_production)
 
                 if reels_to_copy is not None and len(reels_to_copy) != 0:
                     col_num = self.get_columns_number(self.local_flexin_db_connection, "tablebob")
@@ -106,16 +106,12 @@ class DbReelCopier(Manager):
                     self.executemany(f"INSERT IGNORE INTO tablebob VALUES ({placeholders})", reels_to_copy, connection=self.remote_flexin_db_connection)
 
                 # Get defects and load
-                last_copied_defect_id = self._get_max_id(self.remote_flexin_db_connection, "tabledif")
+                last_copied_defect = self.get_max_element("tabledif", self.remote_flexin_db_connection)
 
-                if last_copied_defect_id is None:
-                    last_copied_defect_id = -1
-
-                defects_to_copy = self._get_defects_to_copy(self.local_flexin_db_connection, last_copied_defect_id, reel_in_production)
+                defects_to_copy = self._get_defects_to_copy(self.local_flexin_db_connection, last_copied_defect, reel_in_production)
 
                 if defects_to_copy is not None and len(defects_to_copy) != 0:
                     col_num = self.get_columns_number(self.local_flexin_db_connection, "tabledif")
-
                     placeholders = ", ".join(["%s"] * col_num)
                     self.executemany(f"INSERT IGNORE INTO tabledif VALUES ({placeholders})", defects_to_copy, connection=self.remote_flexin_db_connection)
 
@@ -204,9 +200,9 @@ class DbReelCopier(Manager):
     '''
     CRUD FUNCTIONS
     '''
-    # Returns the maximum reel id the DB. If no record is found returns None    
-    def _get_max_reel(self, connection):
-        result = self.query("SELECT * FROM tablebob ORDER BY ID DESC LIMIT 1", dictionary = True, connection=connection)       
+
+    def get_max_element(self, table_name, connection) -> dict:
+        result = self.query(f"SELECT * FROM {table_name} WHERE ID = (SELECT MAX(ID) from {table_name})", dictionary = True, connection=connection)
         return result[0] if len(result) > 0 else None
 
 
@@ -217,29 +213,28 @@ class DbReelCopier(Manager):
     def _get_reels_to_copy(self, connection, last_copied, reel_in_production):
         last_copied_id = -1
 
-        if reel_in_production is None:
-            return None
-
         if last_copied is not None:
             last_copied_id = last_copied['ID']
 
+        if reel_in_production is None:
+            return None
 
         in_work_id = reel_in_production['ID']
 
-        lowest_date = self.calc_date_based_on_keep_days_YYYYMMDDHHMM()
-        result = self.query("SELECT * FROM tablebob WHERE id > %s AND IDENTDIF > %s AND ID != %s  ORDER BY ID ASC LIMIT 250", 
-                       (last_copied_id, lowest_date, in_work_id), connection=connection)
+        threshold_date = self.calc_date_based_on_keep_days_YYYYMMDDHHMM()
+        result = self.query("SELECT * FROM tablebob WHERE  %s < ID  AND ID < %s AND IDENTDIF > %s ORDER BY ID ASC LIMIT 250", 
+                       (last_copied_id, in_work_id, threshold_date), connection=connection)
         return result
 
 
-    def _get_defects_to_copy(self, connection, last_copied_defect_id, reel_in_production):
-        lowest_date = self.calc_date_based_on_keep_days_YYYYMMDDHHMM()
+    def _get_defects_to_copy(self, connection, last_copied_defect, reel_in_production):
+        last_copied_defect_id = -1 if last_copied_defect is None else last_copied_defect['ID']
+        threshold_date = self.calc_date_based_on_keep_days_YYYYMMDDHHMM()
         reel_ident = reel_in_production['IDENTDIF']
-        result = self.query("SELECT * FROM tabledif WHERE id > %s AND IDENTDIF > %s AND IDENTDIF != %s ORDER BY ID ASC LIMIT 2500", 
-                       (last_copied_defect_id, lowest_date, reel_ident),
+        result = self.query("SELECT * FROM tabledif WHERE id > %s AND IDENTDIF > %s AND IDENTDIF < %s ORDER BY ID ASC LIMIT 2500", 
+                       (last_copied_defect_id, threshold_date, reel_ident),
                        connection=connection)
         return result
-
 
 
     def _delete_older_records(self, connection):
